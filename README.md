@@ -523,6 +523,86 @@ module.exports = mongoose.model("Purchase", purchaseSchema);
 
 --> purchase.controller.js:
 
+const Purchase=require('../models/purchase.model');
+const Product=require('../models/product.model')
+exports.createPurchase=async (req,res)=>{
+    const userId=req.user._id;
+    const {productId,quantity,purchaseAt}=req.body
+    const myProduct= await Product.findById(productId)
+if (!myProduct){
+    return res.status(404).json({message:"error product not found"})
+}
+const myPurchase= await Purchase.create({user:userId,product:productId,price:myProduct.price,quantity,purchaseAt})
+res.status(201).json({message:"purchase done",data:myProduct})
+}
+
+-->we created purchase route.js:
+
+const express= require('express')
+const router= express.Router();
+const{authenticate}= require('../middlewares/auth.middleware')
+const {authorize}=require('../middlewares/role.middleware')
+const{createPurchase}=require('../controller/purchase.controller')
+
+
+router.post('/',authenticate,authorize('user'),createPurchase);
+
+
+module.exports=router;
+
+
+--> we added the route to the server.js
+
+
+------------------------------------------------------
+
+////we want admin to get all products////
+
+--> add in purchase controller:
+const Purchase = require("../models/purchase.model");
+const Product = require("../models/product.model");
+exports.createPurchase = async (req, res) => {
+  const userId = req.user._id;
+  const { productId, quantity, purchaseAt } = req.body;
+  const myProduct = await Product.findById(productId);
+  if (!myProduct) {
+    return res.status(404).json({ message: "error product not found" });
+  }
+  const myPurchase = await Purchase.create({
+    user: userId,
+    product: productId,
+    price: myProduct.price,
+    quantity,
+    purchaseAt,
+  });
+  res.status(201).json({ message: "purchase done", data: myProduct });
+};
+
+exports.getAllPurchases = async (req, res) => {
+  const purchases = await Purchase.find().populate('user product'); ////// ----> search about populate
+    res.status(200).json({ message: "list of products", data: purchases });
+};
+
+--> in purchase.route:
+router.get('/',authenticate,authorize('admin'),getAllPurchases);
+
+
+////NOTE////
+if i want to populate name of product and for user for example email and name so do 2 poplulate :
+
+-->.populatee('','').populate('','')
+
+////NOTE////
+if i want to delete id from product:
+-->.populatee('','-_id')
+
+
+
+-----------------------------------------------------
+
+
+
+
 
 
 
