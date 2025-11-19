@@ -16,9 +16,9 @@ exports.getProductBySlug = async (req, res) => {
 };
 
 exports.addProduct = async (req, res) => {
-  const { name, desc, price, stock } = req.body;
+  const { name, desc, price, stock ,slug} = req.body;
   const imgURL = req.file.filename;
-  const product = await Product.create({ name, desc, price, stock, imgURL });
+  const product = await Product.create({ name, desc, price, stock, imgURL ,slug});
   res.status(201).json({ message: "product cretad", data: product });
 };
 

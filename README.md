@@ -455,7 +455,44 @@ router.get('/',authenticate,getAllUsers)
     }
 
 
---> we create dmiddleware called role.middleware.js:
+--> we create middleware called role.middleware.js:
+exports.authorize=(...allowedRoles)=>{
+    return (req,res,next)=>{
+        const role = req.user.role;
+
+        if (allowedRoles.includes(role)){
+            return next()
+        }
+return res.status(403).json({message:"error,access denied"})
+    }
+}
+
+--> in user.route.js we assigend the authorized role who can see users only :
+
+router.get('/',authenticate,authorize('admin'),getAllUsers)
+
+
+
+-------------------------------------------------------
+//////////what if you want to add admin so only admin can add admin ???////
+
+--> in user.route.js:
+
+router.post('/addadmin',authenticate,authorize('admin'),addUser('admin'));
+
+
+---------------------------------------------------------
+//////what if we want only admin add and delete products??////////////////
+
+
+-->so we go to product.route then we add the authentication and authorization:
+
+router.post("/",authenticate,authorize('admin'), upload.single("img"), addProduct);
+
+router.delete("/:id",authenticate,authorize('admin'), deleteProduct);
+
+
+
 
 
 
