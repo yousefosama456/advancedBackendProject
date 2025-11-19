@@ -424,9 +424,22 @@ exports.login = async (req, res) => {
   
 };
 
+///////////////let chat gpt explain this part/////////////
 
 
-//////now we wan
+--> we created auth.middleware.js:
+
+const jwt = require('jsonwebtoken')
+const User= require('../models/user.model');
+
+exports.authenticate=async (req,res)=>{
+    const authHeader= req.headers.authorization
+    console.log(authHeader)
+}
+
+
+--> then we puy it between the api to test it for example in user.route.js file:
+
 
 
 
