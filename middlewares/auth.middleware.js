@@ -12,6 +12,7 @@ exports.authenticate = async (req, res,next) => {
     const userId = decoded.id;
     const myUser = await User.findById(userId);
     if (myUser) {
+        req.user=myUser; //////made to be used in the next middleware for authrization
       return next();
     }
     return res.status(401).json({message:"invalid token"});

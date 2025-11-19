@@ -342,6 +342,7 @@ module.exports = mongoose.model("User", userSchema);
 
 
 --------------------------------------------
+///////////////authentication///////////////
 
 ////what if you want to make sure of the password an compare it in the user model//////
 
@@ -439,6 +440,24 @@ exports.authenticate=async (req,res)=>{
 
 
 --> then we puy it between the api to test it for example in user.route.js file:
+
+router.get('/',authenticate,getAllUsers)
+
+
+-------------------------------------------------------------
+
+/////now we will make authrization/////////
+
+--> we added this in authmiddleware to get the use data to see the role for the authrization:
+ if (myUser) {
+        req.user=myUser; //////made to be used in the next middleware for authrization
+      return next();
+    }
+
+
+--> we create dmiddleware called role.middleware.js:
+
+
 
 
 
