@@ -714,6 +714,29 @@ exports.getSalesReport = async (req, res) => {
 
 
 --> ceate report.route.js:
+const express= require('express')
+const router= express.Router();
+const{authenticate}= require('../middlewares/auth.middleware')
+const {authorize}=require('../middlewares/role.middleware')
+const{createPurchase,getAllPurchases,getUserPurchase}=require('../controller/purchase.controller')
+
+
+router.post('/',authenticate,authorize('user'),createPurchase);
+router.get('/getUserPurchase',authenticate,authorize('user'),getUserPurchase);
+router.get('/',authenticate,authorize('admin'),getAllPurchases);
+
+
+
+
+module.exports=router;
+
+
+--> then add route in the server.js
+
+
+
+-----------------------------------------------------
+////////create transaction to remove for example from stock available
 
 
 
