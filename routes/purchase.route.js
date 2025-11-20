@@ -7,7 +7,7 @@ const{createPurchase,getAllPurchases,getUserPurchase}=require('../controller/pur
 
 router.post('/',authenticate,authorize('user'),createPurchase);
 router.get('/getUserPurchase',authenticate,authorize('user'),getUserPurchase);
-// router.get('/',authenticate,authorize('admin'),getAllPurchases);
+router.get('/',authenticate,authorize('admin'),getAllPurchases);
 
 
 
