@@ -50,6 +50,14 @@ app.use('/purchase',purchaseRoute);
 app.use("/report", reportRoute);
 app.use("/backup", settingRoute);
 
+const AppError= require('./utilities/app-error.utils')
+app.use('/',(req,res,next)=>{
+  next(new AppError (`can't find ${req.originalUrl} on this server`,404))
+})
+
+const errorMiddleWare=require('./middlewares/error-handler.middleware');
+app.use(errorMiddleWare);
+
 app.listen(port, () => {
   console.log(`server runs on ${port}`);
 });

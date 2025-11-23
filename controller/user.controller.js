@@ -1,4 +1,5 @@
 const User=require('../models/user.model');
+
 exports.addUser=(role)=>{ return async(req,res)=>{
     const {name,password,email}=req.body;
     const user= await User.create({name,password,email,role});

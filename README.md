@@ -917,6 +917,89 @@ const cors= require('cors');
 app.use(cors(corsMiddleware));
 
 
+--------------------------------------------------------------
+
+//what about rather than always using try and catch every tkme we want to create it once and handles error??/////////
+
+-process in server.js at the end we first call th AppError for error details --> then it passes to the next error handler middleWare to show the error 
+
+-while catch async is used in every controller to only add the .catch(next)
+
+--STEPS--
+
+---> create utilities folder :
+
+--> inside it create app-error.utils.js:
+
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+    this.status = `${statusCode}`.startsWith("4") ? "fail" : "error";
+    this.isOperational=true;
+    Error.captureStackTrace(this,this.constructor)
+  }
+}
+
+module.exports=AppError;
+
+
+///takes error details
+
+--> then we created catch-async.utils.js:
+
+module.exports=fn =>(req,res,next)=>{
+    fn(req,res,next).catch(next)
+}
+
+
+
+
+-->then we created in middleware error-handler.middleware.js:
+
+module.exports = (error, req, res, next) => {
+  error.statusCode = error.statusCode || 500;
+  error.status = error.status || "error";
+  if (process.env.NODE_ENV === "development") {
+    res.status(error.statusCode).json({
+      status: error.status,
+      error: error,
+      message: error.message,
+      stack: error.stack,
+    });
+  }
+  if (process.env.NODE_ENV === "production") {
+    if (error.isOperational) {
+      return res.status(error.statusCode).json({
+        status: error.status,
+        message: error.message,
+      });
+    }
+    else{
+        console.log('Unexpected Error || ', error)
+          return res.status(error.statusCode).json({
+        status: error.status,
+        message: 'Something whent wrong',
+      });
+    }
+  }
+}
+
+
+
+--> to show error if route does not exist so we whan to show error this will happen in the server last app.use:
+
+const AppError= require('./utilities/app-error.utils')
+app.use('/',(req,res,next)=>{
+  next(new AppError (`can't find ${req.originalUrl} on this server`,404))
+})
+
+const errorMiddleWwre=require('./middlewares/error-handler.middleware');
+app.use(errorMiddleWwre);
+
+
+
+
 
 
 
