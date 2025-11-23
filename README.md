@@ -1131,6 +1131,11 @@ exports.getPaginatedProducts=(req,res)=>{
 }
 
 
+------------------------------------------------------------
+////what about storing all  logs/////////////////
+
+
+
 
 
 

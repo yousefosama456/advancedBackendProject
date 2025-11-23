@@ -1,8 +1,10 @@
 const Product = require("../models/product.model");
 const memoryCache = require("../utilities/memory-cache.util");
 const cacheKey='productCache'
+const logger= require("../utilities/logger.utils");
 
 exports.getAllProducts = async (req, res) => {
+  logger.info('user listed products')
   const cachePoducts= memoryCache.get(cacheKey)
   if (cachePoducts){
      return res.status(200).json({ message: "all products using cache memory", data: cachePoducts });
