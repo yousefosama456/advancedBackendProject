@@ -999,6 +999,139 @@ app.use(errorMiddleWwre);
 
 
 
+------------------------------------------------------------
+/////what about using cache//////////////////////
+
+--> install npm i node-cache
+
+-->then create in utilities folder memory-cache.utils.js:
+const NodeCache = require("node-cache");
+
+const stdTTL = 5 * 60; //300 seconds
+const checkperiod = 2 * 60; //120
+const cache = new NodeCache({ stdTTL, checkperiod });
+
+module.exports = cache;
+
+
+--> then for example use it in product controller in which we will delete cache data when we add or delete products and also we putted up the cacheKey which will be the refrence of where data is saved 
+- then we used   const cachePoducts= memoryCache.get(cacheKey)
+ to get the data and made if ondition 
+
+ - while we used this to set products in the cacheKey
+  const products = await Product.find({isDeleted:false}).lean();
+  memoryCache.set(cacheKey,products)
+
+  code:
+  const Product = require("../models/product.model");
+const memoryCache = require("../utilities/memory-cache.util");
+const cacheKey='productCache'
+
+exports.getAllProducts = async (req, res) => {
+  const cachePoducts= memoryCache.get(cacheKey)
+  if (cachePoducts){
+     return res.status(200).json({ message: "all products using cache memory", data: cachePoducts });
+     
+
+  }
+  const products = await Product.find({isDeleted:false}).lean();
+  memoryCache.set(cacheKey,products)
+  res.status(200).json({ message: "all products", data: products });
+};
+
+exports.getProductBySlug = async (req, res) => {
+  const slug = req.params.slug;
+  const product = await Product.findOne({ slug });
+  if (product) {
+    res.status(200).json({ message: `product (${slug}) info`, data: product });
+  } else {
+    res.status(404).json({ message: "error, product not found" }); 
+  }
+};
+
+exports.getPaginatedProducts=(req,res)=>{
+  res.status(200).json(res.paginatedResult)
+}
+exports.addProduct = async (req, res) => {
+  const { name, desc, price, stock, slug } = req.body;
+  const imgURL = req.file.filename;
+  const product = await Product.create({
+    name,
+    desc,
+    price,
+    stock,
+    imgURL,
+    slug,
+  });
+  memoryCache.del(cacheKey)
+  res.status(201).json({ message: "product cretad", data: product });
+};
+
+exports.deleteProduct = async (req, res) => {
+  const id = req.params.id;
+  const product = await Product.findByIdAndUpdate(id, { isDeleted: true });
+  if (product) {
+    res.status(200).json({ message: "product deleted", data: product });
+      memoryCache.del(cacheKey)
+
+  } else {
+    res.status(404).json({ message: "error, product not found" });
+  }
+};
+
+
+
+-------------------------------------------------------------
+/////what about pagination//////////////////
+
+
+-->we cretaed a middleware to use it for pagination in which we use the query to get order and page no. also we will send res.paginatedResult  to our next middleware:
+//api.mydomain/product?page=1&limit=10
+
+module.exports = (model) => async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const sortBy = req.query.sort || "createAt";
+    const order = req.query.order === "desc" ? -1 : 1;
+
+    const [results, total] = await Promise.all([
+      model
+        .find()
+        .sort({ [sortBy]: order })
+        .skip(skip)
+        .limit(limit),
+      model.countDocuments(),
+    ]);
+    res.paginatedResult = {
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      totalResult: total,
+      results,
+    };
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
+--> so inside product middleware we used :
+router.get("/paginatedProducts", paginate(Product),getPaginatedProducts);
+
+-this means that we passed Product schema then the res is send to the other middleware which is getPaginationProducts 
+
+
+--> so in product controller we will response by the 
+
+response we got from pagination :
+exports.getPaginatedProducts=(req,res)=>{
+  res.status(200).json(res.paginatedResult)
+}
+
+
+
 
 
 

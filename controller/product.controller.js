@@ -1,7 +1,16 @@
 const Product = require("../models/product.model");
+const memoryCache = require("../utilities/memory-cache.util");
+const cacheKey='productCache'
 
 exports.getAllProducts = async (req, res) => {
-  const products = await Product.find({isDeleted:false});
+  const cachePoducts= memoryCache.get(cacheKey)
+  if (cachePoducts){
+     return res.status(200).json({ message: "all products using cache memory", data: cachePoducts });
+     
+
+  }
+  const products = await Product.find({isDeleted:false}).lean();
+  memoryCache.set(cacheKey,products)
   res.status(200).json({ message: "all products", data: products });
 };
 
@@ -11,14 +20,25 @@ exports.getProductBySlug = async (req, res) => {
   if (product) {
     res.status(200).json({ message: `product (${slug}) info`, data: product });
   } else {
-    res.status(404).json({ message: "error, product not found" });
+    res.status(404).json({ message: "error, product not found" }); 
   }
 };
 
+exports.getPaginatedProducts=(req,res)=>{
+  res.status(200).json(res.paginatedResult)
+}
 exports.addProduct = async (req, res) => {
-  const { name, desc, price, stock ,slug} = req.body;
+  const { name, desc, price, stock, slug } = req.body;
   const imgURL = req.file.filename;
-  const product = await Product.create({ name, desc, price, stock, imgURL ,slug});
+  const product = await Product.create({
+    name,
+    desc,
+    price,
+    stock,
+    imgURL,
+    slug,
+  });
+  memoryCache.del(cacheKey)
   res.status(201).json({ message: "product cretad", data: product });
 };
 
@@ -27,6 +47,8 @@ exports.deleteProduct = async (req, res) => {
   const product = await Product.findByIdAndUpdate(id, { isDeleted: true });
   if (product) {
     res.status(200).json({ message: "product deleted", data: product });
+      memoryCache.del(cacheKey)
+
   } else {
     res.status(404).json({ message: "error, product not found" });
   }

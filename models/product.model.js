@@ -7,9 +7,10 @@ const productSchema = new mongoose.Schema(
     price: Number,
     imgURL: String,
     stock: Number,
-    isDeleted: { type: Boolean },
+    isDeleted: { type: Boolean ,default:false},
     slug: { type: String, required: true, unique: true },
   },
   { timpstamps: true }
 );
 module.exports = mongoose.model("Product", productSchema);
+ 
