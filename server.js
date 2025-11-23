@@ -18,6 +18,10 @@ const purchaseRoute=require('./routes/purchase.route')
 const reportRoute = require('./routes/report.route')
 const settingRoute= require('./routes/setting.route')
 const port = process.env.PORT;
+const corsMiddleware= require('./middlewares/cors.middleware')
+const cors= require('cors');
+
+app.use(cors(corsMiddleware))
 
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

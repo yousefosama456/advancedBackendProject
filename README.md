@@ -736,7 +736,190 @@ module.exports=router;
 
 
 -----------------------------------------------------
-////////create transaction to remove for example from stock available
+////////create transaction to remove for example from stock available /////////////
+
+--> in purchase.controller.js:
+
+we editted the creatPurchase because we needed to make transaction so :
+exports.createPurchase = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const userId = req.user._id;
+
+    const { productId, quantity, purchaseAt } = req.body;
+    const myProduct = await Product.findOneAndUpdate(
+      { _id: productId, stock: { $gte: quantity } },
+      { $inc: { stock: -quantity } },
+      { new: true, session }
+    );
+    if (!myProduct) {
+      throw new Error("product not found or stock less than quantity");
+    }
+
+    if (!myProduct) {
+      return res.status(404).json({ message: "error product not found" });
+    }
+    const myPurchase = await Purchase.create(
+      [
+        {
+          user: userId,
+          product: productId,
+          price: myProduct.price,
+          quantity,
+          purchaseAt,
+        },
+      ],
+      { session }
+    );
+    await session.commitTransaction();
+    session.endSession();
+    res.status(201).json({ message: "purchase done", data: myPurchase });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(404).json({ message: `"error ",${err.message}` });
+  }
+};
+
+
+--> then it same in all files
+
+
+
+
+
+
+---------------------------------------------------------------------
+///What about if we want to create backup ??/////////////
+
+--> we created file created folder called services and we created file called db-backup.service.js:
+
+const { exec } = require("child_process");
+const path = require("path");
+const fs = require("fs");
+
+const createBackup = () => {
+//   const timestamp = new Date().toISOString().replace(/[ ]/g,"-");
+const timestamp = new Date()
+  .toISOString()
+  .replace(/[:]/g, "-")   // replace colons
+  .replace(/\./g, "-");   // replace dots
+
+  const backupFolder = path.join(
+    __dirname,
+    "..",
+    "backups",
+    `backup-${timestamp}`
+  );
+
+
+if(!fs.existsSync(backupFolder)){
+    fs.mkdirSync(backupFolder,{recursive:true});
+}
+const mongoURI =process.env.MONGO_URI;
+const command =`mongodump --uri="${mongoURI}" --out="${backupFolder}" --gzip`
+exec(command,(error,stdout,stdrr)=>{
+    if (error){
+        console.log(error.message)
+    }
+    else{
+        console.log('backup created || ',stdout)
+    }
+})
+}
+
+module.exports={createBackup}
+
+
+--> then we created an controller called setting.controller.js:
+const {createBackup} = require("../services/db-backup.service")
+
+exports.createBackup=(req,res)=>{
+
+    try{
+        createBackup();
+        res.status(201).json({message:"backup created"})
+
+    }catch(err){
+        res.status(500).json({message:`"backup failed error: ${err.message}` })
+
+    }
+}
+
+--> then we created a setting.route.js:
+const {createBackup}= require('../controller/setting.controller');
+const express= require('express')
+const router= express.Router();
+const {authorize}=require('../middlewares/role.middleware')
+const{createPurchase,getAllPurchases,getUserPurchase}=require('../controller/purchase.controller');
+const { authenticate } = require('../middlewares/auth.middleware');
+
+
+
+
+router.post('/backup',authorize,authenticate('admin'),createBackup)
+
+module.exports=router
+
+
+--> then add in the server folder
+
+
+--------------------------------------------------
+////what if restoree//////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------------------------------
+/////what to do since we cannot deal with cors() like this only??////////////
+
+--> we go add inside .env the ALLOWED_ORGINS that are allowed to access our backend
+
+ALLOWED_ORGIONS=http://localhost:3000
+
+--> we are going to create middleware cors.middleware.js :
+const cors = require("cors");
+const allowedOrgins = process.env.ALLOWED_ORIGINS.split(",");
+const corsOption = {
+  orgin: function (orgin, callback) {
+    if (!orgin) {
+      return callback(null, true); // null means pass without giving error
+    }
+    if (allowedOrgins.includes(orgin)) {
+      return callback(null, true);
+    } else return callback(new Error("cors policy, origin not allowed"));
+  },
+  credentials:true,
+  methods:['GET','POST','PUT','DELETE','PATCH'],
+  allowedHeaders:['Content-Type', 'Authorization']
+};
+
+module.exports= (corsOption);
+
+
+--> then inside server yoou need to do export it and put it in the top:
+const corsMiddleware= require('./middlewares/cors.middleware')
+const cors= require('cors');
+
+app.use(cors(corsMiddleware));
+
+
+
+
+
 
 
 
